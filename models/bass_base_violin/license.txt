@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bass Base Violin
+* source:	https://sketchfab.com/3d-models/bass-base-violin-62898588e87c4edcba25de3c20a8bfd7
+* author:	dudecon (https://sketchfab.com/dudecon)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bass Base Violin" (https://sketchfab.com/3d-models/bass-base-violin-62898588e87c4edcba25de3c20a8bfd7) by dudecon (https://sketchfab.com/dudecon) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
