@@ -26,22 +26,26 @@ const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 
 let geometry, material, pianoBox, bassBox, drumsBox;
-let floor;
-let lightButtonPlanet;
+let floor, bar0, bar1;
+let lightButton;
 let intensity, light;
 let lightParams;
 let ambientLight;
 
-let listener, sound, audioLoader;
-let sound1, audioLoader1;
-let sound2, audioLoader2;
+let listener, pSound, pAudioLoader;
+let bSound, bAudioLoader;
+let dSound, dAudioLoader;
+let jSound, jAudioLoader;
 let soundParams;
+
 let lightColourButtonPress = 0;
 
 let clock, delta, interval;
 let loader, modelLoaded, piano, bass, drums, furnature;
 
-let slider;
+let floorProperties;
+
+let stoneTextureResult, woodTextureResult, woodMaterial;
 
 let mouseDown, mouse, intersects;
 
@@ -65,8 +69,6 @@ function init() {
   //background colour set
   scene = new THREE.Scene();
   scene.background = new THREE.Color("black");
-  //const spaceTexture = new THREE.TextureLoader().load("./texture/17520.jpg");
-  //scene.background = spaceTexture;
 
   camera = new THREE.PerspectiveCamera(
     75,
@@ -83,7 +85,7 @@ function init() {
 
   //lighting
   lightParams = { r: 220, g: 20, b: 60 };
-  intensity = 0.01;
+  intensity = 0.005;
   light = new THREE.DirectionalLight(lightParams, intensity);
   light.position.set(-10, 10, 10);
   scene.add(light);
@@ -106,10 +108,12 @@ function init() {
   pianoBox = new THREE.Mesh(geometry, material);
   bassBox = new THREE.Mesh(geometry, material);
   drumsBox = new THREE.Mesh(geometry, material);
+  let JuanBox = new THREE.Mesh(geometry, material);
   pianoBox.position.set(-4, 0.9, -6);
   bassBox.position.set(0, 0.9, -14);
   drumsBox.position.set(5, 0.9, -7);
-  scene.add(pianoBox, bassBox, drumsBox);
+  JuanBox.position.set(-23, -0.9, 15);
+  scene.add(pianoBox, bassBox, drumsBox, JuanBox);
 
   //Interaction objects
   let lightButtongeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
@@ -117,177 +121,116 @@ function init() {
     color: 0x000000,
     wireframe: false
   });
-  lightButtonPlanet = new THREE.Mesh(lightButtongeometry, lightButtonMaterial);
-  lightButtonPlanet.position.set(-20, 4, 0);
-  slider = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 0.5, 0.5),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      wireframe: false
-    })
-  );
-  slider.position.z = 20;
-  slider.position.y = 3;
-  scene.add(lightButtonPlanet);
+  lightButton = new THREE.Mesh(lightButtongeometry, lightButtonMaterial);
+  lightButton.position.set(-20, 4, 0);
+  scene.add(lightButton);
 
   //models
   modelLoaded = false;
   loadModels();
 
   //floor
-  let textureLoader = new THREE.TextureLoader();
-  let textureResult = textureLoader.load(
-    "./texture/wood.jpeg",
-    function (tex) {
-      //console.log(tex);
-    },
-    function (evt) {
-      console.log("progress ", evt);
-    },
-    function (evt) {
-      console.log("err", evt);
-    }
-  );
-  floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(75, 75),
-    new THREE.MeshStandardMaterial({
-      map: textureResult
-    })
-  );
+  let woodTextureLoader = new THREE.TextureLoader();
+  woodTextureResult = woodTextureLoader.load("./texture/wood.jpeg");
+  // let stoneTextureLoader = new THREE.TextureLoader();
+  // stoneTextureResult = stoneTextureLoader.load("./texture/stone_floor.jpeg");
+  woodMaterial = new THREE.MeshStandardMaterial({
+    map: woodTextureResult
+  });
+
+  floor = new THREE.Mesh(new THREE.PlaneGeometry(75, 75), woodMaterial);
   scene.add(floor);
   floor.rotateX(-Math.PI / 2);
-  floor.position.y = -0.5;
-  floor.position.z = 5;
+  floor.position.set(0, -0.5, 5);
 
-  //text
-  let textureLoader1 = new THREE.TextureLoader();
-  let textureResult1 = textureLoader.load(
-    "./texture/button_change.png",
-    function (tex) {
-      //console.log(tex);
-    },
-    function (evt) {
-      console.log("progress ", evt);
-    },
-    function (evt) {
-      console.log("err", evt);
-    }
+  //bar
+  bar0 = new THREE.Mesh(new THREE.BoxGeometry(20, 3, 1), woodMaterial);
+  bar1 = new THREE.Mesh(new THREE.BoxGeometry(20, 3, 1), woodMaterial);
+  bar0.rotateY(-Math.PI / 2);
+  bar0.position.set(-22, 0.5, 15);
+  bar1.position.set(-31.5, 0.5, 25.5);
+  scene.add(bar0, bar1);
+
+  //Signs and pictures
+  let buttonSignTextureLoader = new THREE.TextureLoader();
+  let buttonTextureResult = buttonSignTextureLoader.load(
+    "./texture/button_change.png"
   );
-  let lightButtonSign = new THREE.Mesh( //left left wall band
+  let lightButtonSign = new THREE.Mesh(
     new THREE.PlaneGeometry(5, 1),
     new THREE.MeshStandardMaterial({
-      map: textureResult1
+      map: buttonTextureResult
     })
   );
 
-  let textureLoader2 = new THREE.TextureLoader();
-  let textureResult2 = textureLoader.load(
-    "./texture/EASY_INN.jpeg",
-    function (tex) {
-      //console.log(tex);
-    },
-    function (evt) {
-      console.log("progress ", evt);
-    },
-    function (evt) {
-      console.log("err", evt);
-    }
-  );
-  let EasyInn = new THREE.Mesh( //left left wall band
+  let NWInnTextureLoader = new THREE.TextureLoader();
+  let NWInnTextureResult = NWInnTextureLoader.load("./texture/NWInn.jpg");
+  let NWInn = new THREE.Mesh(
     new THREE.PlaneGeometry(15, 5),
     new THREE.MeshStandardMaterial({
-      map: textureResult2
+      map: NWInnTextureResult
     })
   );
-  EasyInn.position.y = 10;
-  EasyInn.position.z = 5;
+
+  let barSignTextureLoader = new THREE.TextureLoader();
+  let barSignTextureResult = barSignTextureLoader.load(
+    "./texture/bar_sign.jpg"
+  );
+  let bar_sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(7, 7),
+    new THREE.MeshStandardMaterial({
+      map: barSignTextureResult
+    })
+  );
+
+  let outSignTextureLoader = new THREE.TextureLoader();
+  let outSignTextureResult = outSignTextureLoader.load("./texture/NWOut.png");
+  let outSign = new THREE.Mesh(
+    new THREE.PlaneGeometry(3, 11),
+    new THREE.MeshStandardMaterial({
+      map: outSignTextureResult
+    })
+  );
+
+  outSign.rotateY(-Math.PI);
+  outSign.position.z = 41.9;
+  bar_sign.rotateY(Math.PI / 2);
+  bar_sign.position.set(-34.9, 4, 15);
+  NWInn.position.set(0, 10, 5);
   lightButtonSign.rotateY(Math.PI / 2);
-  lightButtonSign.position.y = 2.5;
-  lightButtonSign.position.x = -19.9;
-  scene.add(lightButtonSign, EasyInn);
+  lightButtonSign.position.set(-19.9, 2.5, 0);
+  scene.add(lightButtonSign, NWInn, outSign, bar_sign);
 
   //Walls
-  let textureLoader0 = new THREE.TextureLoader();
-  let textureResult0 = textureLoader.load(
-    "./texture/Wall.jpeg",
-    function (tex) {
-      //console.log(tex);
-    },
-    function (evt) {
-      console.log("progress ", evt);
-    },
-    function (evt) {
-      console.log("err", evt);
-    }
-  );
-  let wall0 = new THREE.Mesh( //left left wall band
-    new THREE.PlaneGeometry(30, 10),
-    new THREE.MeshStandardMaterial({
-      map: textureResult0
-    })
-  );
-  let wall1 = new THREE.Mesh( //left wall band
-    new THREE.PlaneGeometry(30, 10),
-    new THREE.MeshStandardMaterial({
-      map: textureResult0
-    })
-  );
-  let wall2 = new THREE.Mesh( //back wall band
-    new THREE.PlaneGeometry(70, 10),
-    new THREE.MeshStandardMaterial({
-      map: textureResult0
-    })
-  );
-  let wall3 = new THREE.Mesh( //left wall
-    new THREE.PlaneGeometry(50, 10),
-    new THREE.MeshStandardMaterial({
-      map: textureResult0
-    })
-  );
-  let wall4 = new THREE.Mesh( //right wall
-    new THREE.PlaneGeometry(75, 10),
-    new THREE.MeshStandardMaterial({
-      map: textureResult0
-    })
-  );
-  let wall5 = new THREE.Mesh( //left wall
-    new THREE.PlaneGeometry(75, 10),
-    new THREE.MeshStandardMaterial({
-      map: textureResult0
-    })
-  );
-  //wall0.rotateY(Math.PI / 2);
-  wall0.position.y = 3;
-  wall0.position.x = -35;
-  wall0.position.z = 5;
+  let wallTextureLoader = new THREE.TextureLoader();
+  let wallTextureResult = wallTextureLoader.load("./texture/Wall.jpeg");
+  let wallMaterial = new THREE.MeshStandardMaterial({
+    map: wallTextureResult
+  });
+
+  let wall0 = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), wallMaterial); //left left wall band
+  let wall1 = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), wallMaterial); //left wall band
+  let wall2 = new THREE.Mesh(new THREE.PlaneGeometry(70, 10), wallMaterial); //back wall band
+  let wall3 = new THREE.Mesh(new THREE.PlaneGeometry(50, 10), wallMaterial); //left wall
+  let wall4 = new THREE.Mesh(new THREE.PlaneGeometry(75, 10), wallMaterial); //right wall
+  let wall5 = new THREE.Mesh(new THREE.PlaneGeometry(75, 10), wallMaterial); //left wall
+
+  wall0.position.set(-35, 3, 5);
   wall1.rotateY(Math.PI / 2);
-  wall1.position.y = 3;
-  wall1.position.x = -20;
-  wall1.position.z = -10;
-  wall2.position.y = 3;
-  wall2.position.z = -25;
-  wall3.rotateY(Math.PI / 2); //left wall
-  wall3.position.y = 3;
-  wall3.position.x = -35;
-  wall3.position.z = 20;
-  wall4.rotateY(-Math.PI / 2); //right wall
-  wall4.position.y = 3;
-  wall4.position.x = 35;
-  wall4.position.z = 5;
+  wall1.position.set(-20, 3, -10);
+  wall2.position.set(0, 3, -25);
+  wall3.rotateY(Math.PI / 2);
+  wall3.position.set(-35, 3, 20);
+  wall4.rotateY(-Math.PI / 2);
+  wall4.position.set(35, 3, 5);
   wall5.rotateY(-Math.PI);
-  wall5.position.y = 3; //back wall
-  wall5.position.x = 0;
-  wall5.position.z = 42;
+  wall5.position.set(0, 3, 42);
+
   scene.add(wall0, wall1, wall2, wall3, wall4, wall5);
 
   //stage
   let stageG = new THREE.CylinderGeometry(10, 10, 3, 10);
-  let stage = new THREE.Mesh(
-    stageG,
-    new THREE.MeshBasicMaterial({
-      map: textureResult
-    })
-  );
+  let stage = new THREE.Mesh(stageG, woodMaterial);
   stage.position.z = -10;
   scene.add(stage);
 
@@ -296,42 +239,69 @@ function init() {
   camera.add(listener);
 
   //piano
-  sound = new THREE.PositionalAudio(listener);
-  audioLoader = new THREE.AudioLoader();
-  audioLoader.load("sounds/Piano.mp3", function (buffer) {
-    sound.setBuffer(buffer);
-    sound.setRefDistance(5);
-    sound.setVolume(1.0);
-    sound.play();
+  pSound = new THREE.PositionalAudio(listener);
+  pAudioLoader = new THREE.AudioLoader();
+  pAudioLoader.load("sounds/Piano.mp3", function (buffer) {
+    pSound.setBuffer(buffer);
+    pSound.setRefDistance(5);
+    pSound.setVolume(1.0);
+    pSound.play();
   });
-  pianoBox.add(sound);
+  pianoBox.add(pSound);
 
   //bass
-  sound1 = new THREE.PositionalAudio(listener);
-  audioLoader1 = new THREE.AudioLoader();
-  audioLoader1.load("sounds/DB.mp3", function (buffer) {
-    sound1.setBuffer(buffer);
-    sound1.setRefDistance(5);
-    sound1.setVolume(0.4);
-    sound1.play();
+  bSound = new THREE.PositionalAudio(listener);
+  bAudioLoader = new THREE.AudioLoader();
+  bAudioLoader.load("sounds/DB.mp3", function (buffer) {
+    bSound.setBuffer(buffer);
+    bSound.setRefDistance(5);
+    bSound.setVolume(0.4);
+    bSound.play();
   });
-  bassBox.add(sound1);
+  bassBox.add(bSound);
 
   //drums
-  sound2 = new THREE.PositionalAudio(listener);
-  audioLoader2 = new THREE.AudioLoader();
-  audioLoader2.load("sounds/Drums.mp3", function (buffer) {
-    sound2.setBuffer(buffer);
-    sound2.setRefDistance(5);
-    sound2.setVolume(0.5);
-    sound2.play();
+  dSound = new THREE.PositionalAudio(listener);
+  dAudioLoader = new THREE.AudioLoader();
+  dAudioLoader.load("sounds/Drums.mp3", function (buffer) {
+    dSound.setBuffer(buffer);
+    dSound.setRefDistance(5);
+    dSound.setVolume(0.5);
+    dSound.play();
   });
-  drumsBox.add(sound2);
+  drumsBox.add(dSound);
+
+  //Juan
+  jSound = new THREE.PositionalAudio(listener);
+  jAudioLoader = new THREE.AudioLoader();
+  jAudioLoader.load("sounds/recording.mp3", function (buffer) {
+    jSound.setBuffer(buffer);
+    jSound.setRefDistance(5);
+    jSound.setVolume(0.5);
+    jSound.play(5);
+  });
+  JuanBox.add(jSound);
+  // const distortion = new Tone.Distortion(0.5).toDestination();
+  // Tone.context = jSound.context;
+  // jSound.connect(distortion);
+
+  let ambience = new Tone.Player(
+    "./sounds/backgroundNoise.mp3"
+  ).toDestination();
+  ambience.loop = true;
+  ambience.autostart = true;
 
   soundParams = { p: 1.0, b: 0.4, d: 0.5 };
   gui.add(soundParams, "p", 0.0, 1.0).name("Piano volume");
   gui.add(soundParams, "b", 0.0, 1.0).name("Bass volume");
   gui.add(soundParams, "d", 0.0, 1.0).name("Drums volume");
+
+  // floorProperties = { Floor: "wood" };
+  // gui.add(floorProperties, "Floor", {
+  //   Wood: "woodTextureResult",
+  //   Stone: "stoneTextureResult",
+  //   Disco: "disco"
+  // });
 
   window.addEventListener("resize", onWindowResize, false);
 
@@ -412,7 +382,6 @@ function init() {
     }
   };
 
-  window.addEventListener("pointermove", move, false);
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
@@ -423,9 +392,6 @@ function init() {
     10
   );
 
-  //helpers
-  const helper = new THREE.DirectionalLightHelper(light, 5);
-  //scene.add(helper);
   play();
 }
 //animation functions
@@ -441,9 +407,12 @@ function stop() {
 }
 
 function update() {
-  sound.setVolume(soundParams.p);
-  sound1.setVolume(soundParams.b);
-  sound2.setVolume(soundParams.d);
+  pSound.setVolume(soundParams.p);
+  bSound.setVolume(soundParams.b);
+  dSound.setVolume(soundParams.d);
+
+  // woodMaterial.map(floorProperties.Wood);
+  // woodMaterial.map(floorProperties.Stone);
 
   const time = performance.now();
 
@@ -506,7 +475,7 @@ function onWindowResize() {
 function loadModels() {
   loader = new GLTFLoader();
 
-  const onLoadStatic = function (gltf, position) {
+  const onLoadPiano = function (gltf, position) {
     piano = gltf.scene.children[0];
     piano.scale.multiplyScalar(1.125);
     piano.position.copy(position);
@@ -514,7 +483,7 @@ function loadModels() {
     piano.rotateZ(-Math.PI / 1.5);
     scene.add(piano);
   };
-  const inLoadStatic = function (gltf, position) {
+  const onLoadBass = function (gltf, position) {
     bass = gltf.scene.children[0];
     bass.scale.multiplyScalar(3.5);
     bass.position.copy(position);
@@ -522,7 +491,7 @@ function loadModels() {
     bass.rotateZ(-Math.PI / 6);
     scene.add(bass);
   };
-  const enLoadStatic = function (gltf, position) {
+  const onLoadDrums = function (gltf, position) {
     drums = gltf.scene.children[0];
     drums.scale.multiplyScalar(1.125);
     drums.position.copy(position);
@@ -530,7 +499,7 @@ function loadModels() {
     drums.rotateZ(-Math.PI / 3.0);
     scene.add(drums);
   };
-  const unLoadStatic = function (gltf, position) {
+  const onLoadFurnature = function (gltf, position) {
     furnature = gltf.scene.children[0];
     console.log(furnature);
     furnature.scale.multiplyScalar(0.1);
@@ -538,6 +507,15 @@ function loadModels() {
     modelLoaded = true;
     furnature.rotateZ(-Math.PI);
     scene.add(furnature);
+  };
+  const onLoadJuan = function (gltf, position) {
+    let Juan = gltf.scene.children[0];
+    console.log(Juan);
+    Juan.scale.multiplyScalar(0.03);
+    Juan.position.copy(position);
+    modelLoaded = true;
+    Juan.rotateZ(Math.PI / 2);
+    scene.add(Juan);
   };
 
   const onProgress = function () {
@@ -547,12 +525,20 @@ function loadModels() {
   const onError = function (errorMessage) {
     console.log(errorMessage);
   };
-
+  const manPosition = new THREE.Vector3(-23.5, -0.6, 15);
+  loader.load(
+    "models/man_in_suit/scene.gltf",
+    function (gltf) {
+      onLoadJuan(gltf, manPosition);
+    },
+    onProgress,
+    onError
+  );
   const pianoPosition = new THREE.Vector3(-6, 1.5, -5);
   loader.load(
     "models/piano_3d/scene.gltf",
     function (gltf) {
-      onLoadStatic(gltf, pianoPosition);
+      onLoadPiano(gltf, pianoPosition);
     },
     onProgress,
     onError
@@ -561,7 +547,7 @@ function loadModels() {
   loader.load(
     "models/bass_base_violin/scene.gltf",
     function (gltf) {
-      inLoadStatic(gltf, doubleBassPosition);
+      onLoadBass(gltf, doubleBassPosition);
     },
     onProgress,
     onError
@@ -570,36 +556,36 @@ function loadModels() {
   loader.load(
     "models/drum_set/scene.gltf",
     function (gltf) {
-      enLoadStatic(gltf, drumsPosition);
+      onLoadDrums(gltf, drumsPosition);
     },
     onProgress,
     onError
   );
-  // const furnaturePosition = new THREE.Vector3(29, -0.5, -10);
-  // loader.load(
-  //   "models/table_set/scene.gltf",
-  //   function (gltf) {
-  //     unLoadStatic(gltf, furnaturePosition);
-  //   },
-  //   onProgress,
-  //   onError
-  // );
-  // const furnaturePosition1 = new THREE.Vector3(29, -0.5, 10);
+  const furnaturePosition = new THREE.Vector3(29, -0.5, -10);
+  loader.load(
+    "models/table_set/scene.gltf",
+    function (gltf) {
+      onLoadFurnature(gltf, furnaturePosition);
+    },
+    onProgress,
+    onError
+  );
+  const furnaturePosition1 = new THREE.Vector3(29, -0.5, 10);
 
-  // loader.load(
-  //   "models/table_set/scene.gltf",
-  //   function (gltf) {
-  //     unLoadStatic(gltf, furnaturePosition1);
-  //   },
-  //   onProgress,
-  //   onError
-  // );
+  loader.load(
+    "models/table_set/scene.gltf",
+    function (gltf) {
+      onLoadFurnature(gltf, furnaturePosition1);
+    },
+    onProgress,
+    onError
+  );
 
   // const furnaturePosition2 = new THREE.Vector3(29, -0.5, 30);
   // loader.load(
   //   "models/table_set/scene.gltf",
   //   function (gltf) {
-  //     unLoadStatic(gltf, furnaturePosition2);
+  //     onLoadFurnature(gltf, furnaturePosition2);
   //   },
   //   onProgress,
   //   onError
@@ -609,42 +595,39 @@ function loadModels() {
 function triggerAttack(event) {
   console.log("down");
 
-  raycaster.setFromCamera(mouse, camera); //creates ray
-  intersects = raycaster.intersectObject(lightButtonPlanet);
-  if (intersects === raycaster.intersectObject(lightButtonPlanet)) {
+  raycaster.setFromCamera(mouse, camera);
+  intersects = raycaster.intersectObject(lightButton);
+  if (intersects === raycaster.intersectObject(lightButton)) {
     console.log("LIGHT");
   } else {
     console.log("NADA");
   }
-  //intersects = raycaster.intersectObject(slider);
+
   if (intersects.length > 0) {
-    //if anything in array
     mouseDown = true;
   }
 
   if (mouseDown) {
-    slider.material.color.setHex(0xff00ff);
-
     lightColourButtonPress++;
     switch (lightColourButtonPress) {
       case 1:
-        lightButtonPlanet.material.color.setHex(0xff00ff); //purple
+        lightButton.material.color.setHex(0xff00ff); //purple
         light.color = new THREE.Color(255, 0, 255);
         break;
       case 2:
-        lightButtonPlanet.material.color.setHex(0x59c856); //green
+        lightButton.material.color.setHex(0x59c856); //green
         light.color = new THREE.Color(8, 150, 0);
         break;
       case 3:
-        lightButtonPlanet.material.color.setHex(0x0000ff); //blue
+        lightButton.material.color.setHex(0x0000ff); //blue
         light.color = new THREE.Color(0, 0, 255);
         break;
       case 4:
-        lightButtonPlanet.material.color.setHex(0xffa500); //orange
+        lightButton.material.color.setHex(0xffa500); //orange
         light.color = new THREE.Color(150, 70, 0);
         break;
       case 5:
-        lightButtonPlanet.material.color.setHex(0xff0000); //red
+        lightButton.material.color.setHex(0xff0000); //red
         light.color = new THREE.Color(175, 7, 7);
         break;
       default:
@@ -656,25 +639,7 @@ function triggerAttack(event) {
 }
 
 function triggerRelease(event) {
-  console.log("up");
-
   mouseDown = false;
   console.log("up");
-  lightButtonPlanet.material.color.setHex(0x000000);
-  slider.material.color.setHex(0x000000);
-}
-
-function move(event) {
-  mouse.x = (event.clientX / sceneWidth) * 2 - 1;
-  mouse.y = -(event.clientY / sceneHeight) * 2 + 1;
-
-  if (mouseDown) {
-    // Make the sphere follow the mouse
-    let vector = new THREE.Vector3(mouse.x, mouse.y, 0.5); // create a new 3D vector using our mouse position
-    vector.unproject(camera); // project mouse vector into world space using camera's normalised device coordinate space
-    let dir = vector.sub(camera.position).normalize(); // Create a direction vector based on subtracting our camera's position from our mouse position
-    //let distance = -camera.position.z / dir.z; // derive distance from the negative z position of the camera divided by our direction's z position
-    let pos = camera.position.clone().add(dir.multiplyScalar(5)); //create a new position based on adding the direction vector scaled by the distance vector, to the camera's position vector
-    slider.position.copy(pos); // copy our new position into the planet's position vector
-  }
+  lightButton.material.color.setHex(0x000000);
 }
