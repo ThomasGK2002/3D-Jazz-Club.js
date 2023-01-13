@@ -71,6 +71,9 @@ select {
 
 #overlay button {
   background: #ffffff;
+  position: absolute;
+  top: 80%;
+  left: 50%;
   border: 0;
   color: #000000;
   padding: 16px 20px;
@@ -78,6 +81,16 @@ select {
   cursor: pointer;
 }
 
+#overlay h1 {
+  position: absolute;
+  top: 20%;
+  left: 20%;
+}
+#overlay p {
+  position: absolute;
+  top: 30%;
+  left: 20%;
+}
 #notSupported {
   width: 50%;
   margin: auto;
